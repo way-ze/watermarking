@@ -1,3 +1,5 @@
+Based on https://github.com/jwkirchenbauer/lm-watermarking/tree/main/watermark_reliability_release
+
 # 💧2.0: [On the Reliability of Watermarks for Large Language Models](https://arxiv.org/abs/2306.04634)
 
 This directory contains the codebase for reproducing the experiments in our [new 6/7/23 preprint](https://arxiv.org/abs/2306.04634).
