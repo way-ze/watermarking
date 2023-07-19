@@ -12,7 +12,7 @@ import torch
 import numpy as np
 from bigram_estimator import pHat
 
-def LogLikelihood(delta, w, word_dict, n_gram_dict, watermark_processor, tokenizer): 
+def L_Gw(delta, w, word_dict, n_gram_dict, watermark_processor, tokenizer): 
     L = 0
     greenlist_w, redlist_w = watermark_processor._get_greenlist_ids(torch.tensor(tokenizer.encode(w)), get_redlist=True)
     greenlist_w = tokenizer.convert_ids_to_tokens(greenlist_w)
