@@ -15,20 +15,16 @@ def L_Gw(delta, w, word_dict, watermark_processor, tokenizer, model):
     greenlist_w = tokenizer.convert_ids_to_tokens(greenlist_w)
     redlist_w = tokenizer.convert_ids_to_tokens(redlist_w)
     
-    for word in list(word_dict.keys())[:10]:
-        # print(f"word = {word}")
+    for word in list(word_dict.keys())[1]:
         greensum = 0 
         redsum = 0
         
-        for wdash in greenlist_w[:100]:
-            # print(f"wdash_green = {wdash}")
-            # green = pHat(wdash, word, word_dict, n_gram_dict)
+        for wdash in greenlist_w:
             green = pLM(wdash, word, tokenizer, model)
             if green != 0: # prevents underflow
                 greensum += green
 
-        for wdash in redlist_w[:100]:
-            # print(f"wdash_red = {wdash}")
+        for wdash in redlist_w:
             red = pLM(wdash, word, tokenizer, model)
             if red != 0:
                 redsum += red
@@ -39,6 +35,5 @@ def L_Gw(delta, w, word_dict, watermark_processor, tokenizer, model):
             L += delta
     
         print(f"word = {word}, greensum = {greensum}, redsum = {redsum}, sum = {greensum + redsum}")
-        # greensum + redsum has to be 1, intuitively??
-        # can we not just force redsum to be 1 - greensum?
+
     return L, redsum
