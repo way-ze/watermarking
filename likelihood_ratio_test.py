@@ -18,14 +18,16 @@ def L_Gw(delta, w, word_dict, watermark_processor, tokenizer, model):
     for word in list(word_dict.keys())[1]:
         greensum = 0 
         redsum = 0
-        
+        word2tok = tokenizer.convert_tokens_to_ids(word)
+        with torch.inference_mode():
+            output = model(torch.tensor([[word2tok]]))
         for wdash in greenlist_w:
-            green = pLM(wdash, word, tokenizer, model)
+            green = pLM(wdash, word, tokenizer, output)
             if green != 0: # prevents underflow
                 greensum += green
 
         for wdash in redlist_w:
-            red = pLM(wdash, word, tokenizer, model)
+            red = pLM(wdash, word, tokenizer, output)
             if red != 0:
                 redsum += red
         
