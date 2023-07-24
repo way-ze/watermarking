@@ -111,7 +111,9 @@ class WatermarkBase:
             ]  # legacy behavior
         if get_redlist:
             # redlist_ids = vocab_permutation[(self.vocab_size - greenlist_size):]
-            redlist_ids = vocab_permutation[:(self.vocab_size - greenlist_size)]
+            # redlist_ids = vocab_permutation[:(self.vocab_size - greenlist_size)]
+            redlist_ids = vocab_permutation[greenlist_size:]
+            # do sanity check here to make sure that the greenlist and redlist indices are empty
             # print(f"{len(greenlist_ids)} + {len(redlist_ids)}")
             return greenlist_ids, redlist_ids
         else:

@@ -1,20 +1,12 @@
 from collections import defaultdict, Counter
 from nltk.util import ngrams 
-import torch
+# import torch
 
-def pLM(word1, word2, tokenizer, output):
-    # word 1 and word 2 can also be whole sentences, expandable.
-    
+
+def pLM(word1, tokenizer, soft_next_token_logits):
+    # word 1 can also be whole sentences, expandable.
     word1tok = tokenizer.convert_tokens_to_ids(word1)
-    # word2tok = tokenizer.convert_tokens_to_ids(word2)
-    
-    # be careful of the order between word1tok and word2tok!!!!
-    #with torch.inference_mode():
-    #    output = model(torch.tensor([[word2tok]]))
-    
-    next_token_logits = torch.softmax(output.logits[0, -1, :], -1)
-    prob = next_token_logits[word1tok]
-
+    prob = soft_next_token_logits[word1tok]
     return prob
 
 def getWordDict(corpus, tokenizer):

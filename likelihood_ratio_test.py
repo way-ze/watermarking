@@ -8,34 +8,37 @@
 
 import torch
 from bigram_estimator import pLM
+import scipy
 
 def L_Gw(delta, w, word_dict, watermark_processor, tokenizer, model): 
-    L = 0
+    Lgrprod = 1
+    Ldelta = 0
+    expdelta = torch.exp(delta)
     greenlist_w, redlist_w = watermark_processor._get_greenlist_ids(torch.tensor(tokenizer.encode(w)), get_redlist=True)
     greenlist_w = tokenizer.convert_ids_to_tokens(greenlist_w)
     redlist_w = tokenizer.convert_ids_to_tokens(redlist_w)
     
-    for word in list(word_dict.keys())[1]:
+    for word in word_dict.keys():
         greensum = 0 
         redsum = 0
         word2tok = tokenizer.convert_tokens_to_ids(word)
         with torch.inference_mode():
             output = model(torch.tensor([[word2tok]]))
+        soft_next_token_logits = torch.softmax(output.logits[0, -1, :], -1) 
+        
         for wdash in greenlist_w:
-            green = pLM(wdash, word, tokenizer, output)
-            if green != 0: # prevents underflow
-                greensum += green
+            greensum += pLM(wdash, tokenizer, soft_next_token_logits)
 
         for wdash in redlist_w:
-            red = pLM(wdash, word, tokenizer, output)
-            if red != 0:
-                redsum += red
+            redsum += pLM(wdash, tokenizer, soft_next_token_logits)
         
-        if not (greensum == 0 and redsum == 0):
-            L -= torch.log(torch.exp(delta) * greensum + redsum)
+        Lgrprod *= greensum * expdelta + redsum
         if w in greenlist_w:
-            L += delta
+            Ldelta += delta
     
-        print(f"word = {word}, greensum = {greensum}, redsum = {redsum}, sum = {greensum + redsum}")
+    L = Ldelta - torch.log(Lgrprod)
+    return L
 
-    return L, redsum
+def likelihoodRatioTest(statistic1, statistic2):
+    raise NotImplementedError
+    return
