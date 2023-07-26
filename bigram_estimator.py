@@ -3,10 +3,10 @@ from nltk.util import ngrams
 # import torch
 
 
-def pLM(word1, tokenizer, soft_next_token_logits):
-    # word 1 can also be whole sentences, expandable.
+def pLM(word1, tokenizer, soft_logits):
+    # word 1 and word 2 can also be whole sentences, expandable.
     word1tok = tokenizer.convert_tokens_to_ids(word1)
-    prob = soft_next_token_logits[word1tok]
+    prob = soft_logits[:,word1tok]
     return prob
 
 def getWordDict(corpus, tokenizer):
@@ -26,7 +26,7 @@ def getNgramDict(corpus, tokenizer, n_gram=2):
         bigram_freqs += Counter(ngrams(new_words, n_gram))
     return defaultdict(int, dict(bigram_freqs))
 
-## Deprecated method, to just find pLM directly from tokenizer
+## Deprecated
 def pHat(word1, word2, word_dict, n_gram_dict):
     # word_dict = get_word_dict(corpus)
     if (not word1 in word_dict) or (not word2 in word_dict):
