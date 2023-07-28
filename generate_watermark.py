@@ -19,6 +19,14 @@ from watermark_reliability_release.watermark_processor import WatermarkLogitsPro
 # from tqdm import tqdm
 
 ## modified code from kirchenbauer. Changed to generate a custom number of samples
+
+def getGreenlist(w, watermark_processor, tokenizer=None):
+    greenlist_w, redlist_w = watermark_processor._get_greenlist_ids(torch.tensor(tokenizer.encode(w)), get_redlist=True)
+    greenlist_w = tokenizer.convert_ids_to_tokens(greenlist_w)
+    redlist_w = tokenizer.convert_ids_to_tokens(redlist_w)
+    return greenlist_w, redlist_w
+
+
 def generate(prompt, args, model=None, device=None, tokenizer=None, times=1):
     """Instatiate the WatermarkLogitsProcessor according to the watermark parameters
        and generate watermarked text by passing it to the generate method of the model
