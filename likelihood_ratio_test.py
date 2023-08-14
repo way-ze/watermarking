@@ -68,7 +68,7 @@ def L_Gw2(delta, w, corpus, watermark_processor, tokenizer, model):
     # NEW: filters out all w_{t-1} = w
     indices = [i for i, x in enumerate(tokenized_corpus) if x == w]
     # gets indices of w_t
-    indices = [i + 1 for i in indices]
+    indices = [i + 1 for i in indices] # might not need to shift
     soft_logits_filtered = soft_logits[indices,:]
 
     # Initialise green and red sum
