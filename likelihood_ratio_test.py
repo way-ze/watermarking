@@ -1,6 +1,7 @@
 import torch
 from bigram_estimator import pLM
 from generate_watermark import getGreenlist
+from tqdm import tqdm
 # import scipy
 
 
@@ -47,48 +48,52 @@ def L_Gw(delta, w, corpus, watermark_processor, tokenizer, model):
     return L_final
 
 
-def L_Gw2(delta, w, corpus, watermark_processor, tokenizer, model):
-    ### NEW VERSION, including the w_{t-1} filter as discussed with Anej on 28.7.23 
-    expdelta = torch.exp(delta)
+def getGreenlist(w, tokenizer=None, watermark_processor=None, device=None):
+    greenlist_w, redlist_w = watermark_processor._get_greenlist_ids(torch.tensor(tokenizer.encode(w)).to(device), get_redlist=True)
+    greenlist_w = tokenizer.convert_ids_to_tokens(greenlist_w)
+    redlist_w = tokenizer.convert_ids_to_tokens(redlist_w)
+    return greenlist_w, redlist_w
 
-    # gets greenlist of the word that we would like to use for the filter
-    greenlist_w, redlist_w = getGreenlist(w, watermark_processor)
-
-    # Tokenizes corpus into subwords
-    words_with_offsets = tokenizer.backend_tokenizer.pre_tokenizer.pre_tokenize_str(corpus)
-    tokenized_corpus = list(zip(*words_with_offsets))[0]
+def getTokenizedCorpus(corpus, tokenizer=None):
+    # Returns tokenized corpus, subword by subword, as well as the encoded corpus
+    tokenized_corpus = tokenizer.tokenize(corpus)
+    # tokenized_corpus = list(zip(*words_with_offsets))[0]
     corpus_t = tokenizer.encode(corpus, add_special_tokens=False)
+    return tokenized_corpus, corpus_t
+
+def L_Gw2(delta, w, corpus, watermark_processor, tokenizer, model, device):
+    L_tot = torch.tensor(0.0).to(device)
+    expdelta = torch.exp(delta).to(device)
+    greenlist_w, redlist_w = getGreenlist(w, tokenizer, watermark_processor, device)
+    corpus_split = corpus.split('</s>')
+    corpus_split_nos = [split for split in corpus_split if split != '']
+    for sentence in tqdm(corpus_split_nos): # We can actually just feed bigram to bigram here?
+        tokenized_corpus, corpus_t = getTokenizedCorpus(sentence, tokenizer=tokenizer)
+        with torch.inference_mode():
+            output = model(torch.tensor([corpus_t]).to(device))
+        soft_logits = torch.softmax(output.logits[0], dim=1)
+
+        indices = [i for i, x in enumerate(tokenized_corpus) if x == w]
+        # indices = [i + 1 for i in indices] ## DO WE NEED THIS INDEX SHIFT OR NOT?
+        soft_logits_filtered = soft_logits[indices,:]
+        green = torch.zeros(len(indices)).to(device)
+        red = torch.zeros(len(indices)).to(device)
+        for wdash in greenlist_w:
+            green += pLM(wdash, tokenizer, soft_logits_filtered)
+        for wdash in redlist_w:
+            red += pLM(wdash, tokenizer, soft_logits_filtered)
+        deltas = torch.zeros(len(indices)).to(device)
+        for i in range(len(indices)):
+            if tokenized_corpus[indices[i]] in greenlist_w:
+                deltas[i] = deltas[i] + delta
+        Lvector = deltas - torch.log(expdelta * green + red)
+
+        Lol = torch.sum(Lvector)
+        L_tot += Lol
+    return L_tot
 
 
-    # Calculates softmaxed logits given the corpus as an input
-    with torch.inference_mode():
-        output = model(torch.tensor([corpus_t]))
-    soft_logits = torch.softmax(output.logits[0], dim=1)
 
-    # NEW: filters out all w_{t-1} = w
-    indices = [i for i, x in enumerate(tokenized_corpus) if x == w]
-    # gets indices of w_t
-    indices = [i + 1 for i in indices] # might not need to shift
-    soft_logits_filtered = soft_logits[indices,:]
-
-    # Initialise green and red sum
-    green = torch.zeros(len(indices))
-    red = torch.zeros(len(indices))
-    
-    # Same stuff as above
-    for wdash in greenlist_w:
-        green += pLM(wdash, tokenizer, soft_logits_filtered)
-    for wdash in redlist_w:
-        red += pLM(wdash, tokenizer, soft_logits_filtered)
-    
-    deltas = torch.zeros(len(indices))
-    for i in range(len(indices)):
-        if tokenized_corpus[indices[i]] in greenlist_w:
-            deltas[i] = deltas[i] + delta
-    Lvector = deltas - torch.log(expdelta * green + red)
-
-    L_final = torch.sum(Lvector)
-    return L_final
 
 def likelihoodRatioTest(statistic1, statistic2):
     raise NotImplementedError
