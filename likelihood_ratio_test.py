@@ -70,6 +70,7 @@ def L_Gw2(delta, w, corpus, watermark_processor, tokenizer, model, device):
     for sentence in tqdm(corpus_split_nos): # We can actually just feed bigram to bigram here?
         tokenized_corpus, corpus_t = getTokenizedCorpus(sentence, tokenizer=tokenizer)
         with torch.inference_mode():
+            # !!!!
             output = model(torch.tensor([corpus_t]).to(device))
         soft_logits = torch.softmax(output.logits[0], dim=1)
 
