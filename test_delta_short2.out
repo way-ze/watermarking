@@ -1,0 +1,3 @@
+0
+slurmstepd: error: poll(): Bad address
+/var/spool/slurm/slurmd/state/job26962631/slurm_script: line 4: 44704 Killed                  python optimize.py
