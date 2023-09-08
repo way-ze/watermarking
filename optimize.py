@@ -28,7 +28,7 @@ for filename in os.listdir(directory_no_wm):
     with open(f, 'r') as infile:
         corpus_without_watermark += json.loads(infile.read())
         
-        args_test = Namespace()
+args_test = Namespace()
 
 arg_dict_test = {
     'run_gradio': False, 
